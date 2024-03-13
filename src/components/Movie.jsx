@@ -3,8 +3,12 @@ import { useParams } from "react-router-dom";
 
 const Movie = () => {
   const { movieName } = useParams();
-  const [movieDetails, setMovieDetails] = useState({});
   const [reviews, setReviews] = useState([]);
+  const calculateAverageRating = (reviews) => {
+    if (reviews.length === 0) return 0; 
+    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return (totalRating / reviews.length).toFixed(1); 
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,23 +46,30 @@ const Movie = () => {
   };
 
   useEffect(() => {
-    fetchMovieDetails(movieName);
+    fetchMovieReviews(movieName);
   }, [movieName]);
 
-  const fetchMovieDetails = async (movieName) => {
+  const fetchMovieReviews = async (movieName) => {
     try {
-      const response = await fetch(
-        `https://saasmonkbackend.onrender.com/getMovie/${encodeURIComponent(
-          movieName
-        )}`
-      );
+      const response = await fetch(`https://saasmonkbackend.onrender.com/getReview/${movieName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to fetch movie details");
+        throw new Error('Failed to fetch reviews');
       }
+  
       const data = await response.json();
-      setMovieDetails(data);
+      if (Array.isArray(data.data)) {
+        setReviews(data.data);
+      } else {
+        console.error("Data is not an array:", data);
+      }
     } catch (error) {
-      console.error("Error fetching movie details:", error);
+      console.error('Error fetching reviews:', error);
     }
   };
 
@@ -270,13 +281,24 @@ const Movie = () => {
       )}
 
       {/* hero */}
+      
       <div className="flex flex-row justify-between px-12 mt-8">
-        <h1 className="text-3xl">{movieDetails.movieName}</h1>
-        <h1 className="text-3xl text-[#6558f5]">9/10</h1>
+        <h1 className="text-3xl">{reviews.length > 0 ? reviews[0].movieName : ''}</h1>
+        <h1 className="text-3xl text-[#6558f5]">{reviews.length > 0 ? `${calculateAverageRating(reviews)}/10` : ''}</h1>
       </div>
 
       <div className="relative flex flex-col gap-4 px-12 mt-8">
-        <div className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
+      {reviews.map((review, index) => (
+          <div key={index} className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
+            <div className="flex flex-row justify-between">
+              <h1>{review.comments}</h1>
+              <h1 className="text-[#6558f5]">{review.rating}/10</h1>
+            </div>
+            <h1 className="text-sm italic">By {review.userName}</h1>
+          </div>
+        ))}
+        </div>
+        {/* <div className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
           <div className="flex flex-row justify-between">
             <h1>This is the best movie ever! I really enjoyed it</h1>
             <h1 className="text-[#6558f5]">9/10</h1>
@@ -296,8 +318,8 @@ const Movie = () => {
             <h1 className="text-[#6558f5]">9/10</h1>
           </div>
           <h1 className="text-sm italic">By Amitav Khandelwal</h1>
-        </div>
-      </div>
+        </div> */}
+      
 
       {/* footer */}
       <footer className="flex flex-row h-16 bg-[#ced8e0] justify-between px-6 items-center fixed bottom-0 w-full">
