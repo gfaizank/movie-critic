@@ -5,6 +5,8 @@ import { MdDelete } from "react-icons/md";
 const Home = () => {
   const navigate = useNavigate();
 
+  
+
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     movie: "",
@@ -142,6 +144,17 @@ const Home = () => {
       console.error('Error deleting movie:', error);
     }
   };
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredMovies, setFilteredMovies] = useState([]);
+
+  useEffect(() => {
+    
+    const filtered = movies.filter(movie =>
+      movie.movieName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredMovies(filtered);
+  }, [searchQuery, movies]);
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -379,13 +392,16 @@ const Home = () => {
           id="default-search"
           class="block w-80 p-4 ps-10 text-sm text-gray-900 border-2 border-[#756af5] rounded-md bg-gray-50 focus:[#756af5]"
           placeholder="Search for your favourite movie"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           required
         />
       </div>
+      
 
       {/* Cards */}
       <div className="grid grid-cols-4 gap-2 bg-transparent h-92 px-6 mt-8">
-        {movies.map((movie, index) => (
+        {(searchQuery === "" ? movies : filteredMovies).map((movie, index) => (
           <div
             key={index}
             className="h-32 w-80 bg-[#e0defc] flex flex-col p-3 justify-center"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { MdDelete } from "react-icons/md";
 
 const Movie = () => {
   const { movieName } = useParams();
@@ -160,6 +161,21 @@ const Movie = () => {
       })
       .catch((error) => console.error("Error fetching movies:", error));
   }, []);
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      const response = await fetch(`https://saasmonkbackend.onrender.com/deletereview/${reviewId}`, {
+        method: 'DELETE',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete review');
+      }
+      setReviews(prevReviews => prevReviews.filter(review => review._id !== reviewId));
+    } catch (error) {
+      console.error('Error deleting review:', error);
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -391,7 +407,10 @@ const Movie = () => {
               <h1>{review.comments}</h1>
               <h1 className="text-[#6558f5]">{review.rating}/10</h1>
             </div>
+            <div className="flex flex-row justify-between">
             <h1 className="text-sm italic">By {review.userName}</h1>
+            <MdDelete className="text-red-700" onClick={() => handleDeleteReview(review._id)} />
+            </div>
           </div>
         ))}
       </div>
