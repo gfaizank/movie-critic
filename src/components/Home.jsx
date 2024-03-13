@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { MdDelete } from "react-icons/md";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -125,6 +126,21 @@ const Home = () => {
 
   const handleCardClick = (movieName) => {
     navigate(`/movie/${encodeURIComponent(movieName)}`);
+  };
+
+  const handleDeleteMovie = async (movieName) => {
+    try {
+      const response = await fetch(`https://saasmonkbackend.onrender.com/deletemovie/${encodeURIComponent(movieName)}`, {
+        method: 'DELETE',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete movie');
+      }
+      setMovies(prevMovies => prevMovies.filter(movie => movie.movieName !== movieName));
+    } catch (error) {
+      console.error('Error deleting movie:', error);
+    }
   };
 
   return (
@@ -373,15 +389,17 @@ const Home = () => {
           <div
             key={index}
             className="h-32 w-80 bg-[#e0defc] flex flex-col p-3 justify-center"
-            onClick={() => handleCardClick(movie.movieName)}
+            
           >
-            <h1 className="mb-2">{movie.movieName}</h1>
+            <h1 onClick={() => handleCardClick(movie.movieName)} className="mb-2">{movie.movieName}</h1>
             <p className="mb-2 text-xs italic">Released {movie.date}</p>
             <p className="mb-2 text-xs font-bold">
               Rating: {movie.avgRating}/10
             </p>
+            <MdDelete onClick={() => handleDeleteMovie(movie.movieName)} />
           </div>
         ))}
+        </div>
         {/* <div className="h-32 w-80 bg-[#e0defc] flex flex-col p-3 justify-center">
             <h1 className="mb-2">Star Wars: A new hope</h1>
             <p className="mb-2 text-xs italic ">Released 1st August, 2022</p>
@@ -426,7 +444,7 @@ const Home = () => {
             <p className="mb-2 text-xs italic ">Released 1st August, 2022</p>
             <p className="mb-2 text-xs font-bold">Rating: 9/10</p>
         </div> */}
-      </div>
+      
 
       {/* footer */}
       <footer className="flex flex-row h-16 bg-[#ced8e0] justify-between px-6 items-center fixed bottom-0 w-full">
