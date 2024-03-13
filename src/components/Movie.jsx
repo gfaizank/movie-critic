@@ -5,17 +5,17 @@ const Movie = () => {
   const { movieName } = useParams();
   const [reviews, setReviews] = useState([]);
   const calculateAverageRating = (reviews) => {
-    if (reviews.length === 0) return 0; 
+    if (reviews.length === 0) return 0;
     const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return (totalRating / reviews.length).toFixed(1); 
+    return (totalRating / reviews.length).toFixed(1);
   };
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
+    movie: "",
     name: "",
-    price: "",
-    category: "",
-    description: "",
+    rating: "",
+    comments: "",
   });
 
   const [isMovieOpen, setIsMovieOpen] = useState(false);
@@ -26,6 +26,14 @@ const Movie = () => {
 
   const toggleMovieModal = () => {
     setIsMovieOpen(!isMovieOpen);
+  };
+
+  const handleMovieChange = (e) => {
+    const { name, value } = e.target;
+    setMovieData({
+      ...movieData,
+      [name]: value,
+    });
   };
 
   const toggleReviewModal = () => {
@@ -39,10 +47,71 @@ const Movie = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  //review data submit
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted with data:", formData);
-    toggleReviewModal();
+
+    const formReviewData = {
+      movieName: formData.movie,
+      userName: formData.name,
+      rating: formData.rating,
+      comments: formData.comments,
+    };
+
+    try {
+      const response = await fetch(
+        "https://saasmonkbackend.onrender.com/addreview",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formReviewData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit review");
+      }
+
+      console.log("Form submitted with review data:", formReviewData);
+      toggleReviewModal();
+    } catch (error) {
+      console.error("Error submitting review:", error.message);
+    }
+  };
+
+  // movie data submit
+  const handleMovieSubmit = async (e) => {
+    e.preventDefault();
+
+    const formMovieData = {
+      movieName: movieData.name,
+      date: movieData.release,
+    };
+
+    try {
+      const response = await fetch(
+        "https://saasmonkbackend.onrender.com/addmovie",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formMovieData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit review");
+      }
+
+      console.log("Form submitted with movie data:", formMovieData);
+      toggleMovieModal();
+      setModalSubmitted(true);
+    } catch (error) {
+      console.error("Error submitting review:", error.message);
+    }
   };
 
   useEffect(() => {
@@ -51,17 +120,20 @@ const Movie = () => {
 
   const fetchMovieReviews = async (movieName) => {
     try {
-      const response = await fetch(`https://saasmonkbackend.onrender.com/getReview/${movieName}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `https://saasmonkbackend.onrender.com/getReview/${movieName}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      });
-  
+      );
+
       if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
+        throw new Error("Failed to fetch reviews");
       }
-  
+
       const data = await response.json();
       if (Array.isArray(data.data)) {
         setReviews(data.data);
@@ -69,9 +141,25 @@ const Movie = () => {
         console.error("Data is not an array:", data);
       }
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      console.error("Error fetching reviews:", error);
     }
   };
+
+  // movie cards logic
+  const [movies, setMovies] = useState([]);
+
+  useEffect(() => {
+    fetch("https://saasmonkbackend.onrender.com/getMovie")
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data.data)) {
+          setMovies(data.data);
+        } else {
+          console.error("Data is not an array:", data);
+        }
+      })
+      .catch((error) => console.error("Error fetching movies:", error));
+  }, []);
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -134,7 +222,7 @@ const Movie = () => {
                 </button>
               </div>
               {/* movie Modal body */}
-              <form className="p-4 md:p-5" onSubmit={handleSubmit}>
+              <form className="p-4 md:p-5" onSubmit={handleMovieSubmit}>
                 {/* Form fields */}
                 <div className="flex flex-col gap-4 mb-4">
                   <div className="">
@@ -142,8 +230,8 @@ const Movie = () => {
                       type="text"
                       name="name"
                       id="name"
-                      value={formData.name}
-                      onChange={handleChange}
+                      value={movieData.name}
+                      onChange={handleMovieChange}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                       placeholder="Name"
                       required
@@ -151,11 +239,11 @@ const Movie = () => {
                   </div>
                   <div className="">
                     <input
-                      type="number"
-                      name="price"
-                      id="price"
-                      value={formData.price}
-                      onChange={handleChange}
+                      type="text"
+                      name="release"
+                      id="release"
+                      value={movieData.release}
+                      onChange={handleMovieChange}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                       placeholder="Release Date"
                       required
@@ -214,22 +302,23 @@ const Movie = () => {
                 </button>
               </div>
               {/* review Modal body */}
-              <form className="p-4 md:p-5" onSubmit={handleSubmit}>
+              <form className="p-4 md:p-5" onSubmit={handleReviewSubmit}>
                 {/* Form fields */}
                 <div className="flex flex-col gap-4 mb-4">
                   <div className="">
                     <select
-                      id="category"
-                      name="category"
-                      value={formData.category}
+                      id="movie"
+                      name="movie"
+                      value={formData.movie}
                       onChange={handleChange}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
                       <option>Select a movie</option>
-                      <option value="TV">Avengers</option>
-                      <option value="PC">IronMan</option>
-                      <option value="GA">Tarzan</option>
-                      <option value="PH">Welcome</option>
+                      {movies.map((movie, index) => (
+                        <option key={index} value={movie.movieName}>
+                          {movie.movieName}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="">
@@ -247,9 +336,9 @@ const Movie = () => {
                   <div className="">
                     <input
                       type="number"
-                      name="price"
-                      id="price"
-                      value={formData.price}
+                      name="rating"
+                      id="rating"
+                      value={formData.rating}
                       onChange={handleChange}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                       placeholder="Rating out of 10"
@@ -258,13 +347,14 @@ const Movie = () => {
                   </div>
                   <div className="">
                     <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
+                      id="comments"
+                      name="comments"
+                      defaultValue={formData.comments}
                       onChange={handleChange}
                       rows="4"
                       className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       placeholder="Review Comments"
+                      required
                     ></textarea>
                   </div>
                 </div>
@@ -281,15 +371,22 @@ const Movie = () => {
       )}
 
       {/* hero */}
-      
+
       <div className="flex flex-row justify-between px-12 mt-8">
-        <h1 className="text-3xl">{reviews.length > 0 ? reviews[0].movieName : ''}</h1>
-        <h1 className="text-3xl text-[#6558f5]">{reviews.length > 0 ? `${calculateAverageRating(reviews)}/10` : ''}</h1>
+        <h1 className="text-3xl">
+          {reviews.length > 0 ? reviews[0].movieName : ""}
+        </h1>
+        <h1 className="text-3xl text-[#6558f5]">
+          {reviews.length > 0 ? `${calculateAverageRating(reviews)}/10` : ""}
+        </h1>
       </div>
 
       <div className="relative flex flex-col gap-4 px-12 mt-8">
-      {reviews.map((review, index) => (
-          <div key={index} className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
+        {reviews.map((review, index) => (
+          <div
+            key={index}
+            className="flex flex-col border-2 h-24 py-4 px-4 gap-3"
+          >
             <div className="flex flex-row justify-between">
               <h1>{review.comments}</h1>
               <h1 className="text-[#6558f5]">{review.rating}/10</h1>
@@ -297,8 +394,8 @@ const Movie = () => {
             <h1 className="text-sm italic">By {review.userName}</h1>
           </div>
         ))}
-        </div>
-        {/* <div className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
+      </div>
+      {/* <div className="flex flex-col border-2 h-24 py-4 px-4 gap-3">
           <div className="flex flex-row justify-between">
             <h1>This is the best movie ever! I really enjoyed it</h1>
             <h1 className="text-[#6558f5]">9/10</h1>
@@ -319,7 +416,6 @@ const Movie = () => {
           </div>
           <h1 className="text-sm italic">By Amitav Khandelwal</h1>
         </div> */}
-      
 
       {/* footer */}
       <footer className="flex flex-row h-16 bg-[#ced8e0] justify-between px-6 items-center fixed bottom-0 w-full">
