@@ -20,6 +20,7 @@ const Movie = () => {
   });
 
   const [isMovieOpen, setIsMovieOpen] = useState(false);
+  const [modalSubmitted, setModalSubmitted] = useState(false);
   const [movieData, setMovieData] = useState({
     name: "",
     release: "",
